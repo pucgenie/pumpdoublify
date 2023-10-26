@@ -53,53 +53,60 @@ def encode_sm(pairs):
 
 
 allowed_lr_pairs = set([
-    (0,1), (0,2), (0,3),
+    (0,2), (0,3), (0,4),
     (1,2), (1,3), (1,4),
-    (2,1), (2,3), (2,4),
-    (3,4), (3,5), (3,6),
-    (4,5), (4,6), (4,7),
-    (5,6), (5,7),
-    (6,5), (6,7),
+    (2,3), (2,4), (2,5), (2,6),
+    (3,4), (3,5), (3,6), (3,7),
+    (4,3), (4,5), (4,6), (4,7),
+    (5,6), (5,7), (5,8), (5,9),
+    (6,5), (6,7), (6,8), (6,9),
+    (7,8), (7,9),
 ])
 
 allowed_foot_movements = set([
     (0,0), (0,1), (0,2),
-    (1,0), (1,1), (1,2), (1,3),
-    (2,0), (2,1), (2,2), (2,3),
-    (3,1), (3,2), (3,3), (3,4),
-    (4,3), (4,4), (4,5), (4,6),
-    (5,4), (5,5), (5,6), (5,7),
-    (6,4), (6,5), (6,6), (6,7),
-    (7,5), (7,6), (7,7),
+    (1,0), (1,1), (1,2),
+    (2,0), (2,1), (2,2), (2,3), (2,4),
+    (3,2), (3,3), (3,4), (3,5), (3,6), 
+    (4,2), (4,3), (4,4), (4,5), (4,6),
+    (5,3), (5,4), (5,5), (5,6), (5,7),
+    (6,3), (6,4), (6,5), (6,6), (6,7),
+    (7,5), (7,6), (7,7), (7,8), (7,9),
+    (8,7), (8,8), (8,9),
+    (9,7), (9,8), (9,9),
 ])
 
+#positions: left half, middle 6 x2, right half
+#originally tested two different middle positions, but ended up leaving them identical
 left_foot_distances = [
-    [0, 0, 0, 1, 2, 3, 3, 4],
-    [1, 0, 0, 0, 1, 2, 2, 3],
-    [2, 1, 1, 0, 0, 1, 1, 2],
-    [3, 2, 2, 1, 0, 0, 0, 1],
+    [0, 0, -.05, 1, 1, 2, 2, 3, 4, 4],
+    [2, 2, 0, 0, 0, 0, 0, 1, 2, 2],
+    [2, 2, 0, 0, 0, 0, 0, 1, 2, 2],
+    [3, 3, 2, 1, 1, 0, 0, .05, 1, 1],
 ]
 
 right_foot_distances = [
-    [1, 0, 0, 0, 1, 2, 2, 3],
-    [2, 1, 1, 0, 0, 1, 1, 2],
-    [3, 2, 2, 1, 0, 0, 0, 1],
-    [4, 3, 3, 2, 1, 0, 0, 0],
+    [1, 1, .05, 0, 0, 1, 1, 2, 3, 3],
+    [2, 2, 1, 0, 0, 0, 0, 0, 1, 1],
+    [2, 2, 1, 0, 0, 0, 0, 0, 1, 1],
+    [4, 4, 3, 2, 2, 1, 1, -.05, 0, 0],
 ]
+
 positions = [0,1,2,3,2,1]
 
 jumps_for_position = [
-    [(0, 1), (0, 2), (0, 3), (1, 3), (2, 3)],
-    [(1, 3), (1, 4), (2, 3), (2, 4), (3, 4)],
-    [(3, 4), (3, 5), (3, 6), (4, 5), (4, 6)],
-    [(4, 5), (4, 6), (4, 7), (5, 7), (6, 7)],
+    [(0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4)],
+    [(2, 3), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6), (3, 7), (4, 3), (4, 5), (4, 6), (4, 7), (5, 6), (5, 7), (6, 5), (6, 7)],
+    [(2, 3), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6), (3, 7), (4, 3), (4, 5), (4, 6), (4, 7), (5, 6), (5, 7), (6, 5), (6, 7)],
+    [(5, 7), (5, 8), (5, 9), (6, 7), (6, 8), (6, 9), (7, 8), (7, 9)],
 ]
 
 NEVER = float('-inf')
 STATE_STEP_COUNT = 7
 
-FORWARDNESS = [1, 0, 2, 1, 1, 0, 2, 1]
+FORWARDNESS = [0, 2, 1, 2, 0, 0, 2, 1, 2, 0] #How far up each panel is
 
+#this is the step generation logic, a lot of this is kinda arbitrary but I've arrived here after a lot of experimenting
 def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
     # Check position
     position = positions[position_index]
@@ -107,18 +114,18 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
         dist = left_foot_distances[position][notes[-1]]
     else:
         dist = right_foot_distances[position][notes[-1]]
-    if dist != 0:
+    if dist >= 1:
         return NEVER
 
-    # Start in middle
+    # Start on middle blues for simplicity
     if len(notes) == 1:
         if is_left_foot:
-            if notes[0] != 3: return NEVER
-        else:
             if notes[0] != 4: return NEVER
-
+        else:
+            if notes[0] != 5: return NEVER
+            
     if len(notes) == 2:
-        if notes != (3,4) and notes != (4,3):
+        if notes != (4,5) and notes != (5,4):
             return NEVER
 
     # Check stretch / crossover
@@ -144,13 +151,33 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
             return NEVER
 
     score = 0
+    
+    #using distance to weight for/against certain arrows in certain positions
+    #for singles positions the center panel slightly prefers the outer foot
+    if dist < 1:
+        score -= dist
+    
+    #avoids stretches in half double positions
+    if len(notes) >= 2 and position in [1,2]:
+        a = notes[-1]
+        b = notes[-2]
+        if (a, b) in [(2,5),(2,6),(3,7),(4,7),(5,2),(6,2),(7,3),(7,4)]: #checks for center panel and further away corner
+            score -= 0.7
 
-    # Avoid medium-fast transition
-    if len(notes) >= 7:
+    # Avoid medium-fast transition in singles, in half doubles it's ok
+    if len(notes) >= 7 and position in [0,3]:
         a = notes[-1]
         b = notes[-7]
         if not (a, b) in allowed_foot_movements:
             score -= 0.15
+    
+
+    if len(notes) >= 3 and position in [1,2]:
+        a = notes[-1]
+        b = notes[-3]
+        #transitions across middle of pads disfavors reds
+        if (a,b) in [(3,6),(6,3)]:
+            score -= 0.3
 
     if len(notes) >= 3:
         is_step = notes[-1] == notes[-3]
@@ -158,41 +185,61 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
         was_was_step = len(notes) >= 7 and notes[-5] == notes[-7]
         step_matches = is_step == is_single_step
 
-        # Prefer matching is_single_step.
-        if step_matches:
-            score += 1
-
-        # Slightly prefer mixing steps & non-steps.
-        if is_step == was_step:
-            score -= 0.1
-            if was_step == was_was_step:
+        #takes into account is_single_step, but prefers steps
+        if is_step:
+            score += 0.1
+            if step_matches:
+                score += 0.9
+        #drill prevention
+            if was_step:
                 score -= 0.1
+                if was_step == was_was_step:
+                    score -= 0.1
+                    
+        if not is_step:
+            if step_matches:
+                score += 0.5
+        
 
-    # Avoid crossing the middle a lot
     if len(notes) >= 7:
         a = notes[-1]
         b = notes[-3]
         c = notes[-5]
         d = notes[-7]
-
-        if all(n in (3,4) for n in (a,b,c,d)):
-            if a != b and b != c and c != d:
-                score -= 0.8
-
-    # Try to match up/down
-    if len(notes) >= 1:
-        if FORWARDNESS[og_note] == FORWARDNESS[notes[-1]]:
-            score += 0.1
-
-    # Slightly penalize having a foot avoid the middle when in middle positions.
-    if len(notes) >= 7 and position in [1,2]:
-        a = notes[-1]
-        b = notes[-3]
-        c = notes[-5]
-        d = notes[-7]
-
-        if all(FORWARDNESS[n] in (0,2) for n in (a,b,c,d)):
-            score -= 0.05
+        e = notes[-2]
+        f = notes[-4]
+        g = notes[-6]
+        
+        #avoids repeated back and forth movement
+        if a == c and b == d:
+            score -= 0.15
+            
+        if position in [1,2]:
+        # Avoid crossing the middle a lot
+            if all(n in (4,5) for n in (a,b,c,d)) or all(n in (3,6) for n in (a,b,c,d)):
+                if a != b and b != c and c != d:
+                    score -= 0.8
+                    
+        #avoids diagonal movement in half double positions
+            if (a,b) in [(5,3),(4,6),(3,5),(6,4)]:
+                score -= 0.5
+                #not as bad if only middle 4
+                if all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
+                    score += 0.3
+            
+        #encourages not staying in the same place in half doubles
+            if all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
+                score -= 0.05
+            if all(n in (2,3,4) for n in (a,b,c,d,e,f,g)) or all(n in (5,6,7) for n in (a,b,c,d,e,f,g)):
+                score -= 0.10
+                    
+        #avoids foot being on reds for too long in half doubles, helps make patterns good
+            if FORWARDNESS[a] == FORWARDNESS[b] == FORWARDNESS[c] == 2 and not all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
+                score -= 0.25
+                
+        #prefers 4-note sections to start and end with same note, helps create comfier patterns in half double
+            if a == f:
+                score += 0.05
 
     return score
 
@@ -259,6 +306,7 @@ def beats_to_times(bpm_changes, beats):
 
 def transition_step_bounds(bpm):
     # Don't worry.
+    #i'm worried
     lo_bpm = 100
     mid_bpm = 190
     hi_bpm = 240
@@ -311,15 +359,15 @@ def doublify_measures(measures, bpm_changes):
 
     position_rate = 0 # 0 - 1, how fast the position changes.
     position_progress = 0 # 0 - 1, progress until next transition.
-    # Always start in one of the middle positions, moving towards the same side of that position.
-    position_index = random.choice([2,5])
+    # Always start in middle
+    position_index = random.choice([1,4])
     was_jump = False
 
     for note_index in range(len(step_pattern)):
         note_kind, og_note, _ = step_pattern[note_index]
         bpm = bpms[note_index]
         if note_kind in [STEP, SLIDE] and not was_jump:
-            if position_progress >= 1:
+            if position_progress >= 1: 
                 position_index = (position_index + 1) % len(positions)
                 position_progress = 0
                 position_rate = random.random()
@@ -357,11 +405,11 @@ def doublify_measures(measures, bpm_changes):
             elif note_kind == JUMP:
                 if old_full_steps is None:
                     if old_left_foot:
-                        note0 = 4
-                        note1 = 3
+                        note0 = random.choice([5,6])
+                        note1 = random.choice([3,4])
                     else:
-                        note0 = 3
-                        note1 = 4
+                        note0 = random.choice([3,4])
+                        note1 = random.choice([5,6])
                 else:
                     note1 = old_full_steps[0]
                     
@@ -376,7 +424,8 @@ def doublify_measures(measures, bpm_changes):
                             if b == note1
                         ]
 
-                    note0 = random.choice(candidates)
+                    if candidates:
+                        note0 = random.choice(candidates)
 
                 new_state_pairs.append((
                     ((note0, note1), old_left_foot),
@@ -400,7 +449,7 @@ def doublify_measures(measures, bpm_changes):
                 ))
             else:
                 assert note_kind in [STEP, SLIDE], 'wtf2?'
-                for new_step in range(8):
+                for new_step in range(10):
                     new_steps = (old_steps + (new_step,))[-STATE_STEP_COUNT:]
                     new_left_foot = not old_left_foot
                     new_full_steps = (new_step, old_full_steps)
@@ -457,7 +506,7 @@ def doublify_measures(measures, bpm_changes):
     double_notes = []
     for measure in measures:
         for notes in measure:
-            chars = [b'0']*8
+            chars = [b'0']*10
             new_held_notes = set()
             
             tap_count = sum(n in b'1' for n in notes)
@@ -528,7 +577,7 @@ def doublify_measures(measures, bpm_changes):
             if mine_count == 0:
                 continue
 
-            candidates = set(range(8))
+            candidates = set(range(10))
             
             for measure_offset in range(-1, 2):
                 i = measure_index + measure_offset
@@ -590,13 +639,13 @@ def has_non_autogen_double_sm(pairs):
     for key, value in pairs:
         if key != b'NOTES': continue
         lines = value.split(b'\n')
-        if len(lines) >= 3 and lines[1].strip() == b'dance-double:' and not lines[2].startswith(b'     AUTO '):
+        if len(lines) >= 3 and lines[1].strip() == b'pump-double:' and not lines[2].startswith(b'     AUTO '):
             return True
 
 def is_double_chart_sm(key, value):
     if key != b'NOTES': return False
     lines = value.split(b'\n')
-    return len(lines) >= 3 and lines[1].strip() == b'dance-double:'
+    return len(lines) >= 3 and lines[1].strip() == b'pump-double:'
 
 def parse_bpms(raw_bpms):
     if len(raw_bpms) == 0:
@@ -639,7 +688,7 @@ def doublify_sm(data):
             if b'dance-single:' not in header[1]:
                 continue
 
-            header[1] = b'     dance-double:\r'
+            header[1] = b'     pump-double:\r'
             difficulty = header[3]
             log.info(f'  - {difficulty}')
 
@@ -661,7 +710,7 @@ def has_non_autogen_double_ssc(charts):
 
     for chart in charts:
         chart_values = {key: value for key, value in chart if key is not None}
-        is_double = chart_values.get(b'STEPSTYPE') == b'dance-double'
+        is_double = chart_values.get(b'STEPSTYPE') == b'pump-double'
         is_auto = all(
             chart_values.get(key, b'').startswith(b'AUTO')
             for key in SSC_DESCRIPTION_KEYS
@@ -699,7 +748,7 @@ def doublify_ssc(data):
     # Remove double charts.
     charts = [
         chart for chart in charts
-        if (b'STEPSTYPE', b'dance-double') not in chart
+        if (b'STEPSTYPE', b'pump-double') not in chart
     ]
 
     song_bpms = None
@@ -722,7 +771,7 @@ def doublify_ssc(data):
             for key in SSC_DESCRIPTION_KEYS:
                 chart_values[key] = b'AUTOv1.0 ' + chart_values.get(key, b'')
 
-            chart_values[b'STEPSTYPE'] = b'dance-double'
+            chart_values[b'STEPSTYPE'] = b'pump-double'
 
             difficulty = chart_values.get(b'DIFFICULTY', b'???')
             log.info(f'  - {difficulty}')
