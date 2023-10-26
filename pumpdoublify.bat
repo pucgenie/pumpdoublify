@@ -1,2 +1,2 @@
-py %~dp0\pumpdoublify.py %*
+python %~dp0\pumpdoublify.py %*
 pause
