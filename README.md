@@ -18,6 +18,7 @@ Huge thanks to Boxx for writing the original 4 panel -> 8 panel converter, this 
 
 ## Usage
 - Currently only Windows is supported.
+- Download the repository (if you aren't familiar with Github, press the green Code button then "Download ZIP")
 - Install python 3.8 or higher (tested with 3.10): https://www.python.org/downloads/
 - Depending on the installation, "python" in pumpdoublify.bat might need to be replaced with "py"
 - In File Explorer, drag a folder or simfile onto pumpdoublify.bat
