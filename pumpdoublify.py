@@ -222,7 +222,7 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
                     
         #avoids diagonal movement in half doubles
             if (a,b) in [(5,3),(4,6),(3,5),(6,4)]:
-                score -= 0.2
+                score -= 0.3
             
         #encourages not staying in the same place in half doubles
             if all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
