@@ -162,7 +162,7 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
         a = notes[-1]
         b = notes[-2]
         if (a, b) in [(2,5),(2,6),(3,7),(4,7),(5,2),(6,2),(7,3),(7,4)]: #checks for center panel and further away corner
-            score -= 0.7
+            score -= 0.25
 
     # Avoid medium-fast transition in singles, in half doubles it's ok
     if len(notes) >= 7 and position in [0,3]:
@@ -177,7 +177,7 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
         b = notes[-3]
         #transitions across middle of pads disfavors reds
         if (a,b) in [(3,6),(6,3)]:
-            score -= 0.3
+            score -= 0.2
 
     if len(notes) >= 3:
         is_step = notes[-1] == notes[-3]
@@ -220,12 +220,9 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
                 if a != b and b != c and c != d:
                     score -= 0.8
                     
-        #avoids diagonal movement in half double positions
+        #avoids diagonal movement in half doubles
             if (a,b) in [(5,3),(4,6),(3,5),(6,4)]:
-                score -= 0.5
-                #not as bad if only middle 4
-                if all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
-                    score += 0.3
+                score -= 0.2
             
         #encourages not staying in the same place in half doubles
             if all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
@@ -235,11 +232,13 @@ def rate_step(notes, is_left_foot, position_index, is_single_step, og_note):
                     
         #avoids foot being on reds for too long in half doubles, helps make patterns good
             if FORWARDNESS[a] == FORWARDNESS[b] == FORWARDNESS[c] == 2 and not all(n in (3,4,5,6) for n in (a,b,c,d,e,f,g)):
-                score -= 0.25
+                score -= 0.15
+                if FORWARDNESS[d] == 2:
+                    score -= 0.1
                 
         #prefers 4-note sections to start and end with same note, helps create comfier patterns in half double
             if a == f:
-                score += 0.05
+                score += 0.1
 
     return score
 
